@@ -19,9 +19,6 @@ type groupService interface {
 }
 
 func (h *Handler) CreateGroup(c echo.Context) error {
-	if err := checkRole(c, model.AdminRole); err != nil {
-		return err
-	}
 	newGroup := new(model.NewGroup)
 	if err := c.Bind(newGroup); err != nil {
 		return echo.ErrBadRequest
@@ -36,9 +33,6 @@ func (h *Handler) CreateGroup(c echo.Context) error {
 }
 
 func (h *Handler) GetAllGroups(c echo.Context) error {
-	if err := checkRole(c, model.AdminRole); err != nil {
-		return err
-	}
 	groups, err := h.Group.GetAll(c.Request().Context())
 	if err != nil {
 		return echo.ErrNotFound
@@ -47,9 +41,6 @@ func (h *Handler) GetAllGroups(c echo.Context) error {
 }
 
 func (h *Handler) GetGroup(c echo.Context) error {
-	if err := checkRole(c, model.AdminRole); err != nil {
-		return err
-	}
 	groupID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		return echo.ErrBadRequest
@@ -62,9 +53,6 @@ func (h *Handler) GetGroup(c echo.Context) error {
 }
 
 func (h *Handler) UpdateGroup(c echo.Context) error {
-	if err := checkRole(c, model.AdminRole); err != nil {
-		return err
-	}
 	groupID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		return echo.ErrBadRequest
@@ -80,9 +68,6 @@ func (h *Handler) UpdateGroup(c echo.Context) error {
 }
 
 func (h *Handler) DeleteGroup(c echo.Context) error {
-	if err := checkRole(c, model.AdminRole); err != nil {
-		return err
-	}
 	groupID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		return echo.ErrBadRequest

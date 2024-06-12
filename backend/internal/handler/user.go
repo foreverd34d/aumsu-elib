@@ -10,7 +10,6 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-
 type userService interface {
 	Create(ctx context.Context, input *model.NewUser) (*model.User, error)
 	GetAll(ctx context.Context) ([]model.User, error)
@@ -20,10 +19,6 @@ type userService interface {
 }
 
 func (h *Handler) CreateUser(c echo.Context) error {
-	if err := checkRole(c, model.AdminRole); err != nil {
-		return err
-	}
-
 	newUser := new(model.NewUser)
 	if err := c.Bind(newUser); err != nil {
 		return echo.ErrBadRequest
@@ -38,10 +33,6 @@ func (h *Handler) CreateUser(c echo.Context) error {
 }
 
 func (h *Handler) GetAllUsers(c echo.Context) error {
-	if err := checkRole(c, model.AdminRole); err != nil {
-		return err
-	}
-
 	users, err := h.User.GetAll(c.Request().Context())
 	if err != nil {
 		return err
@@ -50,10 +41,6 @@ func (h *Handler) GetAllUsers(c echo.Context) error {
 }
 
 func (h *Handler) GetUser(c echo.Context) error {
-	if err := checkRole(c, model.AdminRole); err != nil {
-		return err
-	}
-
 	userID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		return echo.ErrBadRequest
@@ -66,10 +53,6 @@ func (h *Handler) GetUser(c echo.Context) error {
 }
 
 func (h *Handler) UpdateUser(c echo.Context) error {
-	if err := checkRole(c, model.AdminRole); err != nil {
-		return err
-	}
-
 	userID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		return echo.ErrBadRequest
@@ -88,10 +71,6 @@ func (h *Handler) UpdateUser(c echo.Context) error {
 }
 
 func (h *Handler) DeleteUser(c echo.Context) error {
-	if err := checkRole(c, model.AdminRole); err != nil {
-		return err
-	}
-
 	userID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		return echo.ErrBadRequest

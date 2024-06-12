@@ -25,3 +25,8 @@ type NewGroup struct {
 	Name        string `json:"name"`
 	SpecialtyID int    `json:"specialtyID"`
 }
+
+type NewSpecialty struct {
+	Name string `json:"name"`
+	DepartmentID int `json:"departmentID"`
+}

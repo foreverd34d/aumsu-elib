@@ -55,7 +55,7 @@ func (gs *GroupPostgresRepo) Update(ctx context.Context, ID int, update *model.N
 }
 
 func (gs *GroupPostgresRepo) Delete(ctx context.Context, ID int) error {
-	query := `DELETE FROM groups WHERE group_id = $1`
+	query := `DELETE FROM groups WHERE group_id = $1 CASCADE`
 	_, err := gs.db.ExecContext(ctx, query, ID)
 	return err
 }

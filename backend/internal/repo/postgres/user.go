@@ -81,21 +81,7 @@ func (ur *UserPostgresRepo) Update(ctx context.Context, ID int, update *model.Ne
 }
 
 func (ur *UserPostgresRepo) Delete(ctx context.Context, ID int) error {
-	query := `DELETE FROM users WHERE user_id = $1`
+	query := `DELETE FROM users WHERE user_id = $1 CASCADE`
 	_, err := ur.db.ExecContext(ctx, query, ID)
 	return err
-}
-
-func (ur *UserPostgresRepo) getRoleID(ctx context.Context, roleName string) (int, error) {
-	var ID int
-	query := `SELECT role_id FROM roles WHERE name = $1`
-	err := ur.db.GetContext(ctx, &ID, query, roleName)
-	return ID, err
-}
-
-func (ur *UserPostgresRepo) getGroupID(ctx context.Context, groupName string) (int, error) {
-	var ID int
-	query := `SELECT group_id FROM groups WHERE name = $1`
-	err := ur.db.GetContext(ctx, &ID, query, groupName)
-	return ID, err
 }

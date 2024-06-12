@@ -85,9 +85,17 @@ func initHandler(db *sqlx.DB, tokenSigningKey string) *handler.Handler {
 	sessionRepo := postgres.NewSessionPostgesRepo(db)
 	sessionService := service.NewSessionService(userRepo, sessionRepo, []byte(tokenSigningKey))
 
+	groupRepo := postgres.NewGroupPostgresRepo(db)
+	groupService := service.NewGroupService(groupRepo)
+
+	specialtyRepo := postgres.NewSpecialtyPostgresRepo(db)
+	specialtyService := service.NewSpecialtyService(specialtyRepo)
+
 	return &handler.Handler{
-		User:    userService,
-		Session: sessionService,
+		User:      userService,
+		Session:   sessionService,
+		Group:     groupService,
+		Specialty: specialtyService,
 	}
 }
 

@@ -10,16 +10,16 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
-func NewApp(handler *handler.Handler, tokenSigningKey string) *echo.Echo {
+func NewApp(h *handler.Handler, tokenSigningKey string) *echo.Echo {
 	app := echo.New()
 	app.Use(middleware.Logger())
 	app.Use(middleware.Recover())
 
 	auth := app.Group("/auth")
 	{
-		auth.POST("/session", handler.CreateSession)
-		auth.PUT("/session", handler.UpdateSession)
-		auth.DELETE("/session", handler.DeleteSession)
+		auth.POST("/session", h.CreateSession)
+		auth.PUT("/session", h.UpdateSession)
+		auth.DELETE("/session", h.DeleteSession)
 	}
 
 	jwtConfig := echojwt.Config{
@@ -30,15 +30,58 @@ func NewApp(handler *handler.Handler, tokenSigningKey string) *echo.Echo {
 	}
 	api := app.Group("/api", echojwt.WithConfig(jwtConfig))
 	{
-		users := api.Group("/users")
+		users := api.Group("/users", checkRoleMiddleware(model.AdminRole))
 		{
-			users.GET("", handler.GetAllUsers)
-			users.GET("/:id", handler.GetUser)
-			users.POST("", handler.CreateUser)
-			users.PUT("/:id", handler.UpdateUser)
-			users.DELETE("/:id", handler.DeleteUser)
+			users.POST("", h.CreateUser)
+			users.GET("", h.GetAllUsers)
+			users.GET("/:id", h.GetUser)
+			users.PUT("/:id", h.UpdateUser)
+			users.DELETE("/:id", h.DeleteUser)
+		}
+		groups := api.Group("/groups", checkRoleMiddleware(model.AdminRole))
+		{
+			groups.POST("", h.CreateGroup)
+			groups.GET("", h.GetAllGroups)
+			groups.GET("/:id", h.GetGroup)
+			groups.PUT("/:id", h.UpdateGroup)
+			groups.DELETE("/:id", h.DeleteGroup)
+		}
+		specialties := api.Group("/specialties", checkRoleMiddleware(model.AdminRole))
+		{
+			specialties.POST("", h.CreateSpecialty)
+			specialties.GET("", h.GetAllSpecialties)
+			specialties.GET("/:id", h.GetSpecialty)
+			specialties.PUT("/:id", h.UpdateSpecialty)
+			specialties.DELETE(":/id", h.DeleteSpecialty)
 		}
 	}
 
 	return app
+}
+
+func checkRoleMiddleware(role model.UserRole) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			user, err := extractUserFromContext(c)
+			if err != nil {
+				return echo.ErrUnauthorized
+			}
+			if user.Role < role {
+				return echo.ErrForbidden
+			}
+			return next(c)
+		}
+	}
+}
+
+func extractUserFromContext(c echo.Context) (*model.TokenClaims, error) {
+	token, ok := c.Get("user").(*jwt.Token)
+	if !ok {
+		return nil, echo.ErrUnauthorized
+	}
+	userClaims, ok := token.Claims.(*model.TokenClaims)
+	if !ok {
+		return nil, echo.ErrUnauthorized
+	}
+	return userClaims, nil
 }
