@@ -1,7 +1,7 @@
 package handler
 
 import (
-	"libserver/internal/model"
+	"github.com/foreverd34d/aumsu-elib/internal/model"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"

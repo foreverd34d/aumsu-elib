@@ -6,9 +6,10 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
-	"libserver/internal/model"
 	"strconv"
 	"time"
+
+	"github.com/foreverd34d/aumsu-elib/internal/model"
 
 	"github.com/golang-jwt/jwt/v5"
 )

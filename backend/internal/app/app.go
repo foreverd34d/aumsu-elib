@@ -1,8 +1,8 @@
 package app
 
 import (
-	"libserver/internal/handler"
-	"libserver/internal/model"
+	"github.com/foreverd34d/aumsu-elib/internal/handler"
+	"github.com/foreverd34d/aumsu-elib/internal/model"
 
 	"github.com/golang-jwt/jwt/v5"
 	echojwt "github.com/labstack/echo-jwt/v4"

@@ -1,4 +1,4 @@
-module libserver
+module github.com/foreverd34d/aumsu-elib
 
 go 1.22.3
 

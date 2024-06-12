@@ -2,7 +2,8 @@ package postgres
 
 import (
 	"context"
-	"libserver/internal/model"
+
+	"github.com/foreverd34d/aumsu-elib/internal/model"
 
 	"github.com/jmoiron/sqlx"
 )

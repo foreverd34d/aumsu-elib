@@ -2,16 +2,17 @@ package main
 
 import (
 	"context"
-	"libserver/internal/app"
-	"libserver/internal/handler"
-	"libserver/internal/repo/postgres"
-	"libserver/internal/service"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"strconv"
 	"time"
+
+	"github.com/foreverd34d/aumsu-elib/internal/app"
+	"github.com/foreverd34d/aumsu-elib/internal/handler"
+	"github.com/foreverd34d/aumsu-elib/internal/repo/postgres"
+	"github.com/foreverd34d/aumsu-elib/internal/service"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/joho/godotenv"

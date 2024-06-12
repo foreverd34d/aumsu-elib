@@ -2,9 +2,10 @@ package handler
 
 import (
 	"context"
-	"libserver/internal/model"
 	"net/http"
 	"strconv"
+
+	"github.com/foreverd34d/aumsu-elib/internal/model"
 
 	"github.com/labstack/echo/v4"
 )

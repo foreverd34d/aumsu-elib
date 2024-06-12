@@ -3,7 +3,8 @@ package service
 import (
 	"context"
 	"errors"
-	"libserver/internal/model"
+
+	"github.com/foreverd34d/aumsu-elib/internal/model"
 )
 
 var (

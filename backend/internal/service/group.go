@@ -2,7 +2,8 @@ package service
 
 import (
 	"context"
-	"libserver/internal/model"
+
+	"github.com/foreverd34d/aumsu-elib/internal/model"
 )
 
 type groupRepo interface {
