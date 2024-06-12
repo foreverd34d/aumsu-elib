@@ -6,8 +6,8 @@ type NewUser struct {
 	Patronymic *string `json:"patronymic,omitempty"`
 	Login      string  `json:"login"`
 	Password   string  `json:"password"`
-	RoleName   string  `json:"roleName"`
-	GroupName  *string `json:"groupName,omitempty"`
+	RoleID     int     `json:"roleID"`
+	GroupID    *int    `json:"groupID,omitempty"`
 }
 
 type Credentials struct {
@@ -16,7 +16,12 @@ type Credentials struct {
 }
 
 type NewSession struct {
-	RefreshToken string
-	ExpiresAt int
-	UserID int
+	RefreshToken string `json:"refreshToken"`
+	ExpiresAt    int    `json:"expiresAt"`
+	UserID       int    `json:"userID"`
+}
+
+type NewGroup struct {
+	Name        string `json:"name"`
+	SpecialtyID int    `json:"specialtyID"`
 }

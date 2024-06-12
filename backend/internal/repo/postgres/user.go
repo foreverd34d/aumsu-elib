@@ -16,29 +16,14 @@ func NewUserPostgresRepo(db *sqlx.DB) *UserPostgresRepo {
 }
 
 func (ur *UserPostgresRepo) Create(ctx context.Context, input *model.NewUser) (*model.User, error) {
-	roleID, err := ur.getRoleID(ctx, input.RoleName)
-	if err != nil {
-		return nil, err
-	}
-
-	groupID := new(int)
-	if input.GroupName != nil {
-		*groupID, err = ur.getGroupID(ctx, *input.GroupName)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		groupID = nil
-	}
-
 	user := new(model.User)
 	query := `
 		INSERT INTO users (surname, name, patronymic, login, password_hash, role_id, group_id)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		RETURNING user_id, surname, name, patronymic, login, password_hash, role_id, group_id
 	`
-	err = ur.db.GetContext(ctx, user, query,
-		input.Surname, input.Name, input.Patronymic, input.Login, input.Password, roleID, groupID)
+	err := ur.db.GetContext(ctx, user, query,
+		input.Surname, input.Name, input.Patronymic, input.Login, input.Password, input.RoleID, input.GroupID)
 	return user, err
 }
 
@@ -76,15 +61,6 @@ func (ur *UserPostgresRepo) GetRole(ctx context.Context, userID int) (string, er
 }
 
 func (ur *UserPostgresRepo) Update(ctx context.Context, ID int, update *model.NewUser) (*model.User, error) {
-	roleID, err := ur.getRoleID(ctx, update.RoleName)
-	if err != nil {
-		return nil, err
-	}
-	groupID, err := ur.getGroupID(ctx, *update.GroupName)
-	if err != nil {
-		return nil, err
-	}
-
 	updatedUser := new(model.User)
 	query := `
 		UPDATE users
@@ -98,8 +74,8 @@ func (ur *UserPostgresRepo) Update(ctx context.Context, ID int, update *model.Ne
 		WHERE user_id = $8
 		RETURNING surname, name, patronymic, login, password_hash, role_id, group_id
 	`
-	err = ur.db.GetContext(ctx, updatedUser, query,
-		update.Surname, update.Name, update.Patronymic, update.Login, update.Password, roleID, groupID)
+	err := ur.db.GetContext(ctx, updatedUser, query,
+		update.Surname, update.Name, update.Patronymic, update.Login, update.Password, update.RoleID, update.GroupID)
 	return updatedUser, err
 }
 

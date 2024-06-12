@@ -67,7 +67,7 @@ func (ss *SessionService) Update(ctx context.Context, refreshToken string) (newj
 		return
 	}
 
-	if session.ExpiresAt > int(time.Now().Unix()) {
+	if session.ExpiresAt < int(time.Now().Unix()) {
 		err = ErrRefreshTokenExpired
 		return
 	}

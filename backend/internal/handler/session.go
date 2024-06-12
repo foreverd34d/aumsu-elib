@@ -19,18 +19,6 @@ type refreshTokenRequest struct {
 	Token string `json:"refreshToken"`
 }
 
-func extractUserFromContext(c echo.Context) (*model.TokenClaims, error) {
-	token, ok := c.Get("user").(*jwt.Token)
-	if !ok {
-		return nil, echo.ErrUnauthorized
-	}
-	userClaims, ok := token.Claims.(*model.TokenClaims)
-	if !ok {
-		return nil, echo.ErrUnauthorized
-	}
-	return userClaims, nil
-}
-
 func (h *Handler) CreateSession(c echo.Context) error {
 	credentials := new(model.Credentials)
 	if err := c.Bind(credentials); err != nil {

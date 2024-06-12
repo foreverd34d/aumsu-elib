@@ -19,12 +19,8 @@ type userService interface {
 }
 
 func (h *Handler) CreateUser(c echo.Context) error {
-	userClaims, err := extractUserFromContext(c)
-	if err != nil {
-		return echo.ErrUnauthorized
-	}
-	if userClaims.Role < model.AdminRole {
-		return echo.ErrForbidden
+	if err := checkRole(c, model.AdminRole); err != nil {
+		return err
 	}
 
 	newUser := new(model.NewUser)
@@ -36,17 +32,13 @@ func (h *Handler) CreateUser(c echo.Context) error {
 		return err
 	}
 	return c.JSON(http.StatusCreated, echo.Map{
-		"id": user.ID,
+		"ID": user.ID,
 	})
 }
 
 func (h *Handler) GetAllUsers(c echo.Context) error {
-	userClaims, err := extractUserFromContext(c)
-	if err != nil {
-		return echo.ErrUnauthorized
-	}
-	if userClaims.Role < model.AdminRole {
-		return echo.ErrForbidden
+	if err := checkRole(c, model.AdminRole); err != nil {
+		return err
 	}
 
 	users, err := h.User.GetAll(c.Request().Context())
@@ -57,12 +49,8 @@ func (h *Handler) GetAllUsers(c echo.Context) error {
 }
 
 func (h *Handler) GetUser(c echo.Context) error {
-	userClaims, err := extractUserFromContext(c)
-	if err != nil {
-		return echo.ErrUnauthorized
-	}
-	if userClaims.Role < model.AdminRole {
-		return echo.ErrForbidden
+	if err := checkRole(c, model.AdminRole); err != nil {
+		return err
 	}
 
 	userID, err := strconv.Atoi(c.Param("id"))
@@ -77,12 +65,8 @@ func (h *Handler) GetUser(c echo.Context) error {
 }
 
 func (h *Handler) UpdateUser(c echo.Context) error {
-	userClaims, err := extractUserFromContext(c)
-	if err != nil {
-		return echo.ErrUnauthorized
-	}
-	if userClaims.Role < model.AdminRole {
-		return echo.ErrForbidden
+	if err := checkRole(c, model.AdminRole); err != nil {
+		return err
 	}
 
 	userID, err := strconv.Atoi(c.Param("id"))
@@ -103,12 +87,8 @@ func (h *Handler) UpdateUser(c echo.Context) error {
 }
 
 func (h *Handler) DeleteUser(c echo.Context) error {
-	userClaims, err := extractUserFromContext(c)
-	if err != nil {
-		return echo.ErrUnauthorized
-	}
-	if userClaims.Role < model.AdminRole {
-		return echo.ErrForbidden
+	if err := checkRole(c, model.AdminRole); err != nil {
+		return err
 	}
 
 	userID, err := strconv.Atoi(c.Param("id"))
