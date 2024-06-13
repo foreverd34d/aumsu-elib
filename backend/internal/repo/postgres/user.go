@@ -76,7 +76,7 @@ func (ur *UserPostgresRepo) Update(ctx context.Context, ID int, update *model.Ne
 		RETURNING surname, name, patronymic, login, password_hash, role_id, group_id
 	`
 	err := ur.db.GetContext(ctx, updatedUser, query,
-		update.Surname, update.Name, update.Patronymic, update.Login, update.Password, update.RoleID, update.GroupID)
+		update.Surname, update.Name, update.Patronymic, update.Login, update.Password, update.RoleID, update.GroupID, ID)
 	return updatedUser, err
 }
 

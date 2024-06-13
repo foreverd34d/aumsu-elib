@@ -99,6 +99,8 @@ func getRoleFromName(roleName string) model.UserRole {
 		role = model.StudentRole
 	case "teacher":
 		role = model.TeacherRole
+	case "manager":
+		role = model.ManagerRole
 	case "admin":
 		role = model.AdminRole
 	}

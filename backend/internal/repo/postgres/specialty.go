@@ -47,10 +47,10 @@ func (sr *SpecialtyPostgresRepo) Update(ctx context.Context, ID int, update *mod
 		UPDATE specialties
 		SET name = $1,
 			department_id = $2
-		WHERE specialty_id = $1
+		WHERE specialty_id = $3
 		RETURNING specialty_id, name, department_id
 	`
-	err := sr.db.GetContext(ctx, specialty, query, update.Name, update.DepartmentID)
+	err := sr.db.GetContext(ctx, specialty, query, update.Name, update.DepartmentID, ID)
 	return specialty, err
 }
 

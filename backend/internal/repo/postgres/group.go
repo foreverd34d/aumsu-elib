@@ -45,7 +45,7 @@ func (gs *GroupPostgresRepo) Update(ctx context.Context, ID int, update *model.N
 	group := new(model.Group)
 	query := `
 		UPDATE groups
-		SET name = $1
+		SET name = $1,
 			specialty_id = $2
 		WHERE group_id = $3
 		RETURNING group_id, name, specialty_id

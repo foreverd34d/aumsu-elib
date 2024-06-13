@@ -19,5 +19,6 @@ type UserRole int
 const (
 	StudentRole UserRole = iota
 	TeacherRole
+	ManagerRole
 	AdminRole
 )
