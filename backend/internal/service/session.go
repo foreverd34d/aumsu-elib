@@ -19,76 +19,114 @@ var (
 )
 
 type sessionRepo interface {
-	Create(ctx context.Context, input *model.NewSession) (*model.Session, error)
-	PopByRefreshToken(ctx context.Context, refreshToken string) (*model.Session, error)
+	Create(ctx context.Context, userID int, input *model.NewToken) (*model.Token, error)
+	GetUserFromSession(ctx context.Context, sessionID int) (*model.User, error)
+	PopByRefreshToken(ctx context.Context, refreshToken string) (*model.Token, error)
+	UpdateRefreshToken(ctx context.Context, sessionID int, update *model.NewToken) (*model.Token, error)
+	EndSession(ctx context.Context, sessionID int) error
 }
 
 type SessionService struct {
-	userRepo userRepo
-	sessionRepo sessionRepo
+	user userRepo
+	session sessionRepo
 	signingKey []byte
 }
 
 func NewSessionService(user userRepo, session sessionRepo, signingKey []byte) *SessionService {
 	return &SessionService{
-		userRepo: user,
-		sessionRepo: session,
+		user: user,
+		session: session,
 		signingKey: signingKey,
 	}
 }
 
-func (ss *SessionService) Create(ctx context.Context, credentials *model.Credentials) (jwt string, session *model.Session, err error) {
-	user, err := ss.userRepo.GetByLogin(ctx, credentials.Username)
+func (ss *SessionService) Create(ctx context.Context, credentials *model.Credentials) (jwt string, refreshToken *model.Token, err error) {
+	dbCredentials, err := ss.user.GetCredentialsByLogin(ctx, credentials.Username)
 	if err != nil {
 		return
 	}
 
-	if user.PasswordHash != hashPassword(credentials.Password) {
+	if dbCredentials.PasswordHash != hashPassword(credentials.Password) {
 		err = ErrInvalidPassword
 		return
 	}
 
-	role, err := ss.userRepo.GetRole(ctx, user.ID)
+	role, err := ss.user.GetRole(ctx, dbCredentials.UserID)
 	if err != nil {
 		return
 	}
 
-	session, err = ss.sessionRepo.Create(ctx, createNewSession(user.ID))
+	refreshToken, err = ss.session.Create(ctx, dbCredentials.UserID, createNewToken())
 	if err != nil {
 		return
 	}
 
-	jwt, err = createJWT(user.ID, role, ss.signingKey)
+	jwt, err = createJWT(dbCredentials.UserID, role, ss.signingKey)
 	return
 }
 
-func (ss *SessionService) Update(ctx context.Context, refreshToken string) (newjwt string, newSession *model.Session, err error) {
-	session, err := ss.sessionRepo.PopByRefreshToken(ctx, refreshToken)
+func (ss *SessionService) Update(ctx context.Context, refreshToken string) (newjwt string, newRefreshToken *model.Token, err error) {
+	token, err := ss.session.PopByRefreshToken(ctx, refreshToken)
 	if err != nil {
 		return
 	}
 
-	if session.ExpiresAt < int(time.Now().Unix()) {
+	if token.ExpiresAt < int(time.Now().Unix()) {
+		ss.session.EndSession(ctx, token.SessionID)
 		err = ErrRefreshTokenExpired
 		return
 	}
 
-	newSession, err = ss.sessionRepo.Create(ctx, createNewSession(session.UserID))
+	newRefreshToken, err = ss.session.UpdateRefreshToken(ctx, token.SessionID, createNewToken())
 	if err != nil {
 		return
 	}
 
-	role, err := ss.userRepo.GetRole(ctx, session.UserID)
+	user, err := ss.session.GetUserFromSession(ctx, token.SessionID)
 	if err != nil {
+		ss.session.EndSession(ctx, token.SessionID)
 		return
 	}
 
-	newjwt, err = createJWT(session.UserID, role, ss.signingKey)
+	role, err := ss.user.GetRole(ctx, user.ID)
+	if err != nil {
+		ss.session.EndSession(ctx, token.SessionID)
+		return
+	}
+
+	newjwt, err = createJWT(user.ID, role, ss.signingKey)
+	if err != nil {
+		ss.session.EndSession(ctx, token.SessionID)
+	}
 	return
+
+	// session, err := ss.tokenRepo.PopByRefreshToken(ctx, refreshToken)
+	// if err != nil {
+	// 	return
+	// }
+	//
+	// if session.ExpiresAt < int(time.Now().Unix()) {
+	// 	err = ErrRefreshTokenExpired
+	// 	return
+	// }
+	//
+	// newToken, err = ss.tokenRepo.Create(ctx, createNewToken(session.UserID))
+	// if err != nil {
+	// 	return
+	// }
+	//
+	// role, err := ss.userRepo.GetRole(ctx, session.UserID)
+	// if err != nil {
+	// 	return
+	// }
+	//
+	// newjwt, err = createJWT(session.UserID, role, ss.signingKey)
+	// return
 }
 
 func (ss *SessionService) Delete(ctx context.Context, refreshToken string) error {
-	_, err := ss.sessionRepo.PopByRefreshToken(ctx, refreshToken)
+	token, _ := ss.session.PopByRefreshToken(ctx, refreshToken)
+	err := ss.session.EndSession(ctx, token.SessionID)
 	return err
 }
 
@@ -126,10 +164,9 @@ func createJWT(userID int, roleName string, signingKey []byte) (string, error) {
 	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(signingKey)
 }
 
-func createNewSession(userID int) *model.NewSession {
-	return &model.NewSession{
+func createNewToken() *model.NewToken {
+	return &model.NewToken{
 		RefreshToken: generateRefreshToken(),
-		UserID: userID,
 		ExpiresAt: int(time.Now().Add(30 * 24 * time.Hour).Unix()),
 	}
 }

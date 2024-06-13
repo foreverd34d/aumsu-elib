@@ -52,7 +52,7 @@ func (dr *DepartmentPostgresRepo) Update(ctx context.Context, ID int, update *mo
 	return department, err
 }
 func (dr *DepartmentPostgresRepo) Delete(ctx context.Context, ID int) error {
-	query := `DELETE FROM departments WHERE department_id = $1`
+	query := `DELETE FROM departments WHERE department_id = $1 CASCADE`
 	_, err := dr.db.ExecContext(ctx, query, ID)
 	return err
 }

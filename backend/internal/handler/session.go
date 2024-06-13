@@ -10,8 +10,8 @@ import (
 )
 
 type sessionService interface {
-	Create(ctx context.Context, credentials *model.Credentials) (jwt string, session *model.Session, err error)
-	Update(ctx context.Context, refreshToken string) (newjwt string, newSession *model.Session, err error)
+	Create(ctx context.Context, credentials *model.Credentials) (jwt string, token *model.Token, err error)
+	Update(ctx context.Context, refreshToken string) (newjwt string, newToken *model.Token, err error)
 	Delete(ctx context.Context, refreshToken string) error
 }
 
@@ -24,13 +24,13 @@ func (h *Handler) CreateSession(c echo.Context) error {
 	if err := c.Bind(credentials); err != nil {
 		return echo.ErrBadRequest
 	}
-	jwt, session, err := h.Session.Create(c.Request().Context(), credentials)
+	jwt, token, err := h.Session.Create(c.Request().Context(), credentials)
 	if err != nil {
 		return err
 	}
 	return c.JSON(http.StatusCreated, echo.Map{
 		"accessToken": jwt,
-		"refreshToken": session.RefreshToken,
+		"refreshToken": token.RefreshToken,
 	})
 }
 
@@ -39,13 +39,13 @@ func (h *Handler) UpdateSession(c echo.Context) error {
 	if err := c.Bind(&refreshToken); err != nil {
 		return echo.ErrBadRequest
 	}
-	jwt, session, err := h.Session.Update(c.Request().Context(), refreshToken.Token)
+	jwt, token, err := h.Session.Update(c.Request().Context(), refreshToken.Token)
 	if err != nil {
 		return err
 	}
 	return c.JSON(http.StatusOK, echo.Map{
 		"accessToken": jwt,
-		"refreshToken": session.RefreshToken,
+		"refreshToken": token.RefreshToken,
 	})
 }
 

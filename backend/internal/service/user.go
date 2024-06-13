@@ -15,7 +15,7 @@ type userRepo interface {
 	Create(ctx context.Context, input *model.NewUser) (*model.User, error)
 	GetAll(ctx context.Context) ([]model.User, error)
 	GetByID(ctx context.Context, ID int) (*model.User, error)
-	GetByLogin(ctx context.Context, login string) (*model.User, error)
+	GetCredentialsByLogin(ctx context.Context, login string) (*model.UserCredentials, error)
 	GetRole(ctx context.Context, ID int) (string, error)
 	Update(ctx context.Context, ID int, update *model.NewUser) (*model.User, error)
 	Delete(ctx context.Context, ID int) error

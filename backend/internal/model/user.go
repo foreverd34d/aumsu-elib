@@ -1,14 +1,19 @@
 package model
 
 type User struct {
-	ID           int     `json:"userID" db:"user_id"`
-	Name         string  `json:"name" db:"name"`
-	Surname      string  `json:"surname" db:"surname"`
-	Patronymic   *string `json:"patronymic,omitempty" db:"patronymic"`
-	Login        string  `json:"login" db:"login"`
-	PasswordHash string  `json:"passwordHash" db:"password_hash"`
-	RoleID       int     `json:"roleID" db:"role_id"`
-	GroupID      *int    `json:"groupID,omitempty" db:"group_id"`
+	ID         int     `json:"userID" db:"user_id"`
+	Name       string  `json:"name" db:"name"`
+	Surname    string  `json:"surname" db:"surname"`
+	Patronymic *string `json:"patronymic,omitempty" db:"patronymic"`
+	RoleID     int     `json:"roleID" db:"role_id"`
+	GroupID    *int    `json:"groupID,omitempty" db:"group_id"`
+}
+
+type UserCredentials struct {
+	ID           int    `json:"userCredentialsID" db:"user_credential_id"`
+	Login        string `json:"login" db:"login"`
+	PasswordHash string `json:"passwordHash" db:"password_hash"`
+	UserID       int    `json:"userID" db:"user_id"`
 }
 
 type Role struct {

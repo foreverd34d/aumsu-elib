@@ -15,10 +15,9 @@ type Credentials struct {
 	Password string `json:"password"`
 }
 
-type NewSession struct {
+type NewToken struct {
 	RefreshToken string `json:"refreshToken"`
 	ExpiresAt    int    `json:"expiresAt"`
-	UserID       int    `json:"userID"`
 }
 
 type NewGroup struct {
