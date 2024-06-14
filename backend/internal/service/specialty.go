@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/foreverd34d/aumsu-elib/internal/model"
 )
@@ -23,21 +24,40 @@ func NewSpecialtyService(repo specialtyRepo) *SpecialtyService {
 }
 
 func (ss *SpecialtyService) Create(ctx context.Context, input *model.NewSpecialty) (*model.Specialty, error) {
-	return ss.repo.Create(ctx, input)
+	specialty, err := ss.repo.Create(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("create new specialty: %w", err)
+	}
+	return specialty, nil
 }
 
 func (ss *SpecialtyService) GetAll(ctx context.Context) ([]model.Specialty, error) {
-	return ss.repo.GetAll(ctx)
+	specialties, err := ss.repo.GetAll(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("get all specialties: %w", err)
+	}
+	return specialties, nil
 }
 
 func (ss *SpecialtyService) Get(ctx context.Context, ID int) (*model.Specialty, error) {
-	return ss.repo.Get(ctx, ID)
+	specialty, err := ss.repo.Get(ctx, ID)
+	if err != nil {
+		return nil, fmt.Errorf("get specialty with ID %v: %w", ID, err)
+	}
+	return specialty, nil
 }
 
 func (ss *SpecialtyService) Update(ctx context.Context, ID int, update *model.NewSpecialty) (*model.Specialty, error) {
-	return ss.repo.Update(ctx, ID, update)
+	specialty, err := ss.repo.Update(ctx, ID, update)
+	if err != nil {
+		return nil, fmt.Errorf("update the specialty with ID %v: %w", ID, err)
+	}
+	return specialty, nil
 }
 
 func (ss *SpecialtyService) Delete(ctx context.Context, ID int) error {
-	return ss.repo.Delete(ctx, ID)
+	if err := ss.repo.Delete(ctx, ID); err != nil {
+		return fmt.Errorf("delete the specialty with ID %v: %w", ID, err)
+	}
+	return nil
 }

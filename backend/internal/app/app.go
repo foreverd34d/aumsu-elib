@@ -1,6 +1,9 @@
 package app
 
 import (
+	"errors"
+
+	"github.com/foreverd34d/aumsu-elib/internal/errs"
 	"github.com/foreverd34d/aumsu-elib/internal/handler"
 	"github.com/foreverd34d/aumsu-elib/internal/model"
 
@@ -15,7 +18,7 @@ func NewApp(h *handler.Handler, tokenSigningKey string) *echo.Echo {
 	app.Use(middleware.Logger())
 	app.Use(middleware.Recover())
 
-	auth := app.Group("/auth")
+	auth := app.Group("/auth", mapErrorsMiddleware)
 	{
 		auth.POST("/session", h.CreateSession)
 		auth.PUT("/session", h.UpdateSession)
@@ -24,11 +27,11 @@ func NewApp(h *handler.Handler, tokenSigningKey string) *echo.Echo {
 
 	jwtConfig := echojwt.Config{
 		NewClaimsFunc: func(c echo.Context) jwt.Claims {
-			return new(model.TokenClaims)
+			return new(model.JWTClaims)
 		},
 		SigningKey: []byte(tokenSigningKey),
 	}
-	api := app.Group("/api", echojwt.WithConfig(jwtConfig))
+	api := app.Group("/api", echojwt.WithConfig(jwtConfig), mapErrorsMiddleware)
 	{
 		users := api.Group("/users", checkRoleMiddleware(model.AdminRole))
 		{
@@ -74,14 +77,29 @@ func checkRoleMiddleware(role model.UserRole) echo.MiddlewareFunc {
 	}
 }
 
-func extractUserFromContext(c echo.Context) (*model.TokenClaims, error) {
+func extractUserFromContext(c echo.Context) (*model.JWTClaims, error) {
 	token, ok := c.Get("user").(*jwt.Token)
 	if !ok {
 		return nil, echo.ErrUnauthorized
 	}
-	userClaims, ok := token.Claims.(*model.TokenClaims)
+	userClaims, ok := token.Claims.(*model.JWTClaims)
 	if !ok {
 		return nil, echo.ErrUnauthorized
 	}
 	return userClaims, nil
+}
+
+func mapErrorsMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		err := next(c)
+		if err != nil {
+			if errors.Is(err, errs.NotFound) {
+				return echo.ErrNotFound.WithInternal(err)
+			}
+			if errors.Is(err, errs.RefreshExpired) || errors.Is(err, errs.InvalidPassword) || errors.Is(err, errs.InvalidLogin) {
+				return echo.ErrUnauthorized.WithInternal(err)
+			}
+		}
+		return err
+	}
 }

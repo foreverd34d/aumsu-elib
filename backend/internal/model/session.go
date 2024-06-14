@@ -20,7 +20,7 @@ type Session struct {
 	UserID      int        `json:"userID" db:"user_id"`
 }
 
-type TokenClaims struct {
+type JWTClaims struct {
 	jwt.RegisteredClaims
 	Role UserRole
 }

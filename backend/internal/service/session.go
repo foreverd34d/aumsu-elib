@@ -5,17 +5,14 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
-	"errors"
+	"fmt"
 	"strconv"
 	"time"
 
+	"github.com/foreverd34d/aumsu-elib/internal/errs"
 	"github.com/foreverd34d/aumsu-elib/internal/model"
 
 	"github.com/golang-jwt/jwt/v5"
-)
-
-var (
-	ErrRefreshTokenExpired = errors.New("refresh token expired")
 )
 
 type sessionRepo interface {
@@ -43,90 +40,82 @@ func NewSessionService(user userRepo, session sessionRepo, signingKey []byte) *S
 func (ss *SessionService) Create(ctx context.Context, credentials *model.Credentials) (jwt string, refreshToken *model.Token, err error) {
 	dbCredentials, err := ss.user.GetCredentialsByLogin(ctx, credentials.Username)
 	if err != nil {
+		err = fmt.Errorf("get the user %s: %w", credentials.Username, err)
 		return
 	}
 
 	if dbCredentials.PasswordHash != hashPassword(credentials.Password) {
-		err = ErrInvalidPassword
+		err = fmt.Errorf("create a session: %w", errs.InvalidPassword)
 		return
 	}
 
 	role, err := ss.user.GetRole(ctx, dbCredentials.UserID)
 	if err != nil {
+		err = fmt.Errorf("get user role: %w", err)
 		return
 	}
 
 	refreshToken, err = ss.session.Create(ctx, dbCredentials.UserID, createNewToken())
 	if err != nil {
+		err = fmt.Errorf("create new session: %w", err)
 		return
 	}
 
 	jwt, err = createJWT(dbCredentials.UserID, role, ss.signingKey)
+	if err != nil {
+		err = fmt.Errorf("create a jwt token: %w", err)
+	}
 	return
 }
 
 func (ss *SessionService) Update(ctx context.Context, refreshToken string) (newjwt string, newRefreshToken *model.Token, err error) {
 	token, err := ss.session.PopByRefreshToken(ctx, refreshToken)
 	if err != nil {
+		err = fmt.Errorf("pop the refresh token %v: %w", refreshToken, err)
 		return
 	}
 
 	if token.ExpiresAt < int(time.Now().Unix()) {
 		ss.session.EndSession(ctx, token.SessionID)
-		err = ErrRefreshTokenExpired
+		err = fmt.Errorf("update the session %v: %w", token.SessionID, errs.RefreshExpired)
 		return
 	}
 
 	newRefreshToken, err = ss.session.UpdateRefreshToken(ctx, token.SessionID, createNewToken())
 	if err != nil {
+		ss.session.EndSession(ctx, token.SessionID)
+		err = fmt.Errorf("update the refresh token %v: %w", token.ID, err)
 		return
 	}
 
 	user, err := ss.session.GetUserFromSession(ctx, token.SessionID)
 	if err != nil {
 		ss.session.EndSession(ctx, token.SessionID)
+		err = fmt.Errorf("get user from session %v: %w", token.SessionID, err)
 		return
 	}
 
 	role, err := ss.user.GetRole(ctx, user.ID)
 	if err != nil {
 		ss.session.EndSession(ctx, token.SessionID)
+		err = fmt.Errorf("get a role for user %v: %w", user.ID, err)
 		return
 	}
 
 	newjwt, err = createJWT(user.ID, role, ss.signingKey)
 	if err != nil {
 		ss.session.EndSession(ctx, token.SessionID)
+		err = fmt.Errorf("create the JWT with userID %v: %w", user.ID, err)
 	}
 	return
-
-	// session, err := ss.tokenRepo.PopByRefreshToken(ctx, refreshToken)
-	// if err != nil {
-	// 	return
-	// }
-	//
-	// if session.ExpiresAt < int(time.Now().Unix()) {
-	// 	err = ErrRefreshTokenExpired
-	// 	return
-	// }
-	//
-	// newToken, err = ss.tokenRepo.Create(ctx, createNewToken(session.UserID))
-	// if err != nil {
-	// 	return
-	// }
-	//
-	// role, err := ss.userRepo.GetRole(ctx, session.UserID)
-	// if err != nil {
-	// 	return
-	// }
-	//
-	// newjwt, err = createJWT(session.UserID, role, ss.signingKey)
-	// return
 }
 
 func (ss *SessionService) Delete(ctx context.Context, refreshToken string) error {
 	token, _ := ss.session.PopByRefreshToken(ctx, refreshToken)
 	err := ss.session.EndSession(ctx, token.SessionID)
+	if err != nil {
+		return fmt.Errorf("end the session %v: %w", token.SessionID, err)
+	}
 	return err
 }
 
@@ -153,7 +142,7 @@ func hashPassword(password string) string {
 
 func createJWT(userID int, roleName string, signingKey []byte) (string, error) {
 	role := getRoleFromName(roleName)
-	claims := &model.TokenClaims{
+	claims := &model.JWTClaims{
 		Role: role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject: strconv.Itoa(userID),

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/foreverd34d/aumsu-elib/internal/model"
@@ -16,13 +17,13 @@ type sessionService interface {
 }
 
 type refreshTokenRequest struct {
-	Token string `json:"refreshToken"`
+	RefreshToken string `json:"refreshToken"`
 }
 
 func (h *Handler) CreateSession(c echo.Context) error {
 	credentials := new(model.Credentials)
 	if err := c.Bind(credentials); err != nil {
-		return echo.ErrBadRequest
+		return echo.ErrBadRequest.WithInternal(fmt.Errorf("bind credentials: %w", err))
 	}
 	jwt, token, err := h.Session.Create(c.Request().Context(), credentials)
 	if err != nil {
@@ -37,9 +38,9 @@ func (h *Handler) CreateSession(c echo.Context) error {
 func (h *Handler) UpdateSession(c echo.Context) error {
 	var refreshToken refreshTokenRequest
 	if err := c.Bind(&refreshToken); err != nil {
-		return echo.ErrBadRequest
+		return echo.ErrBadRequest.WithInternal(fmt.Errorf("bind refresh token: %w", err))
 	}
-	jwt, token, err := h.Session.Update(c.Request().Context(), refreshToken.Token)
+	jwt, token, err := h.Session.Update(c.Request().Context(), refreshToken.RefreshToken)
 	if err != nil {
 		return err
 	}
@@ -52,9 +53,9 @@ func (h *Handler) UpdateSession(c echo.Context) error {
 func (h *Handler) DeleteSession(c echo.Context) error {
 	var refreshToken refreshTokenRequest
 	if err := c.Bind(&refreshToken); err != nil {
-		return echo.ErrBadRequest
+		return echo.ErrBadRequest.WithInternal(fmt.Errorf("bind refresh token: %w", err))
 	}
-	err := h.Session.Delete(c.Request().Context(), refreshToken.Token)
+	err := h.Session.Delete(c.Request().Context(), refreshToken.RefreshToken)
 	if err != nil {
 		return err
 	}

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -21,7 +22,7 @@ type departmentService interface {
 func (h *Handler) CreateDepartment(c echo.Context) error {
 	newDepartment := new(model.NewDepartment)
 	if err := c.Bind(newDepartment); err != nil {
-		return echo.ErrBadRequest
+		return echo.ErrBadRequest.WithInternal(fmt.Errorf("bind newDepartment: %w", err))
 	}
 	department, err := h.Department.Create(c.Request().Context(), newDepartment)
 	if err != nil {
@@ -35,7 +36,7 @@ func (h *Handler) CreateDepartment(c echo.Context) error {
 func (h *Handler) GetAllDepartments(c echo.Context) error {
 	departments, err := h.Department.GetAll(c.Request().Context())
 	if err != nil {
-		return echo.ErrNotFound
+		return err
 	}
 	return c.JSON(http.StatusOK, departments)
 }
@@ -43,11 +44,11 @@ func (h *Handler) GetAllDepartments(c echo.Context) error {
 func (h *Handler) GetDepartment(c echo.Context) error {
 	departmentID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		return echo.ErrBadRequest
+		return echo.ErrBadRequest.WithInternal(fmt.Errorf("parse departmentID: %w", err))
 	}
 	department, err := h.Department.Get(c.Request().Context(), departmentID)
 	if err != nil {
-		return echo.ErrNotFound
+		return err
 	}
 	return c.JSON(http.StatusOK, department)
 }
@@ -55,15 +56,15 @@ func (h *Handler) GetDepartment(c echo.Context) error {
 func (h *Handler) UpdateDepartment(c echo.Context) error {
 	departmentID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		return echo.ErrBadRequest
+		return echo.ErrBadRequest.WithInternal(fmt.Errorf("parse departmentID: %w", err))
 	}
 	departmentUpdate := new(model.NewDepartment)
 	if err := c.Bind(departmentUpdate); err != nil {
-		return echo.ErrBadRequest
+		return echo.ErrBadRequest.WithInternal(fmt.Errorf("bind departmentUpdate: %w", err))
 	}
 	_, err = h.Department.Update(c.Request().Context(), departmentID, departmentUpdate)
 	if err != nil {
-		return echo.ErrNotFound
+		return err
 	}
 	return c.NoContent(http.StatusNoContent)
 }
@@ -71,10 +72,10 @@ func (h *Handler) UpdateDepartment(c echo.Context) error {
 func (h *Handler) DeleteDepartment(c echo.Context) error {
 	departmentID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		return echo.ErrBadRequest
+		return echo.ErrBadRequest.WithInternal(fmt.Errorf("parse departmentID: %w", err))
 	}
 	if err := h.Department.Delete(c.Request().Context(), departmentID); err != nil {
-		return echo.ErrNotFound
+		return err
 	}
 	return c.NoContent(http.StatusNoContent)
 }

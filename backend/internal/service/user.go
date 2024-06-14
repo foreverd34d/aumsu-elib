@@ -2,14 +2,11 @@ package service
 
 import (
 	"context"
-	"errors"
+	"fmt"
 
 	"github.com/foreverd34d/aumsu-elib/internal/model"
 )
 
-var (
-	ErrInvalidPassword = errors.New("invalid password")
-)
 
 type userRepo interface {
 	Create(ctx context.Context, input *model.NewUser) (*model.User, error)
@@ -33,22 +30,42 @@ func NewUserService(repo userRepo) *UserService {
 
 func (us *UserService) Create(ctx context.Context, input *model.NewUser) (*model.User, error) {
 	input.Password = hashPassword(input.Password)
-	return us.repo.Create(ctx, input)
+	user, err := us.repo.Create(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("repo: create user: %w", err)
+	}
+	return user, nil
 }
 
 func (us *UserService) GetAll(ctx context.Context) ([]model.User, error) {
-	return us.repo.GetAll(ctx)
+	users, err := us.repo.GetAll(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("repo: get all users: %w", err)
+	}
+	return users, nil
 }
 
 func (us *UserService) Get(ctx context.Context, ID int) (*model.User, error) {
-	return us.repo.GetByID(ctx, ID)
+	user, err := us.repo.GetByID(ctx, ID)
+	if err != nil {
+		return nil, fmt.Errorf("repo: get user with ID %v: %w", ID, err)
+	}
+	return user, nil
 }
 
 func (us *UserService) Update(ctx context.Context, ID int, update *model.NewUser) (*model.User, error) {
 	update.Password = hashPassword(update.Password)
-	return us.repo.Update(ctx, ID, update)
+	user, err := us.repo.Update(ctx, ID, update)
+	if err != nil {
+		return nil, fmt.Errorf("repo: update the user with ID %v: %w", ID, err)
+	}
+	return user, nil
 }
 
 func (us *UserService) Delete(ctx context.Context, ID int) error {
-	return us.repo.Delete(ctx, ID)
+	err := us.repo.Delete(ctx, ID)
+	if err != nil {
+		return fmt.Errorf("repo: delete the user with ID %v: %w", ID, err)
+	}
+	return nil
 }

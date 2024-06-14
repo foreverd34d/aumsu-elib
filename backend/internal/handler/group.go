@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -21,7 +22,7 @@ type groupService interface {
 func (h *Handler) CreateGroup(c echo.Context) error {
 	newGroup := new(model.NewGroup)
 	if err := c.Bind(newGroup); err != nil {
-		return echo.ErrBadRequest
+		return echo.ErrBadRequest.WithInternal(fmt.Errorf("bind newGroup: %w", err))
 	}
 	group, err := h.Group.Create(c.Request().Context(), newGroup)
 	if err != nil {
@@ -35,7 +36,7 @@ func (h *Handler) CreateGroup(c echo.Context) error {
 func (h *Handler) GetAllGroups(c echo.Context) error {
 	groups, err := h.Group.GetAll(c.Request().Context())
 	if err != nil {
-		return echo.ErrNotFound
+		return err
 	}
 	return c.JSON(http.StatusOK, groups)
 }
@@ -43,7 +44,7 @@ func (h *Handler) GetAllGroups(c echo.Context) error {
 func (h *Handler) GetGroup(c echo.Context) error {
 	groupID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		return echo.ErrBadRequest
+		return echo.ErrBadRequest.WithInternal(fmt.Errorf("parse groupID: %w", err))
 	}
 	group, err := h.Group.Get(c.Request().Context(), groupID)
 	if err != nil {
@@ -55,7 +56,7 @@ func (h *Handler) GetGroup(c echo.Context) error {
 func (h *Handler) UpdateGroup(c echo.Context) error {
 	groupID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		return echo.ErrBadRequest
+		return echo.ErrBadRequest.WithInternal(fmt.Errorf("parse groupID: %w", err))
 	}
 	groupUpdate := new(model.NewGroup)
 	if err := c.Bind(groupUpdate); err != nil {
@@ -70,10 +71,10 @@ func (h *Handler) UpdateGroup(c echo.Context) error {
 func (h *Handler) DeleteGroup(c echo.Context) error {
 	groupID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		return echo.ErrBadRequest
+		return echo.ErrBadRequest.WithInternal(fmt.Errorf("parse groupID: %w", err))
 	}
 	if err := h.Group.Delete(c.Request().Context(), groupID); err != nil {
-		return echo.ErrNotFound
+		return err
 	}
 	return c.NoContent(http.StatusNoContent)
 }

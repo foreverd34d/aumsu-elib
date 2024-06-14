@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -21,7 +22,7 @@ type specialtyService interface {
 func (h *Handler) CreateSpecialty(c echo.Context) error {
 	newSpecialty := new(model.NewSpecialty)
 	if err := c.Bind(newSpecialty); err != nil {
-		return echo.ErrBadRequest
+		return echo.ErrBadRequest.WithInternal(fmt.Errorf("bind newSpecialty: %w", err))
 	}
 	specialty, err := h.Specialty.Create(c.Request().Context(), newSpecialty)
 	if err != nil {
@@ -35,7 +36,7 @@ func (h *Handler) CreateSpecialty(c echo.Context) error {
 func (h *Handler) GetAllSpecialties(c echo.Context) error {
 	specialties, err := h.Specialty.GetAll(c.Request().Context())
 	if err != nil {
-		return echo.ErrNotFound
+		return err
 	}
 	return c.JSON(http.StatusOK, specialties)
 }
@@ -43,7 +44,7 @@ func (h *Handler) GetAllSpecialties(c echo.Context) error {
 func (h *Handler) GetSpecialty(c echo.Context) error {
 	specialtyID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		return echo.ErrBadRequest
+		return echo.ErrBadRequest.WithInternal(fmt.Errorf("parse specialtyID: %w", err))
 	}
 	specialty, err := h.Specialty.Get(c.Request().Context(), specialtyID)
 	if err != nil {
@@ -55,15 +56,15 @@ func (h *Handler) GetSpecialty(c echo.Context) error {
 func (h *Handler) UpdateSpecialty(c echo.Context) error {
 	specialtyID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		return echo.ErrBadRequest
+		return echo.ErrBadRequest.WithInternal(fmt.Errorf("parse specialtyID: %w", err))
 	}
 	specialtyUpdate := new(model.NewSpecialty)
 	if err := c.Bind(specialtyUpdate); err != nil {
-		return echo.ErrBadRequest
+		return echo.ErrBadRequest.WithInternal(fmt.Errorf("bind specialtyUpdate: %w", err))
 	}
 	_, err = h.Specialty.Update(c.Request().Context(), specialtyID, specialtyUpdate)
 	if err != nil {
-		return echo.ErrNotFound
+		return err
 	}
 	return c.NoContent(http.StatusNoContent)
 }
@@ -71,10 +72,10 @@ func (h *Handler) UpdateSpecialty(c echo.Context) error {
 func (h *Handler) DeleteSpecialty(c echo.Context) error {
 	specialtyID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		return echo.ErrBadRequest
+		return echo.ErrBadRequest.WithInternal(fmt.Errorf("parse specialtyID: %w", err))
 	}
 	if err := h.Specialty.Delete(c.Request().Context(), specialtyID); err != nil {
-		return echo.ErrNotFound
+		return err
 	}
 	return c.NoContent(http.StatusNoContent)
 }

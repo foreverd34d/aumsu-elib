@@ -38,7 +38,7 @@ func main() {
 
 	dbCtx, dbCancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer dbCancel()
-	db, err := postgres.NewDB(dbCtx, GetDBConfig())
+	db, err := postgres.NewDB(dbCtx, getDBConfig())
 	if err != nil {
 		log.Fatalf("Couldn't connect to db: %v\n", err)
 	}
@@ -56,7 +56,7 @@ func main() {
 	runApp(app, port)
 }
 
-func GetDBConfig() postgres.Config {
+func getDBConfig() postgres.Config {
 	dbPort, _ := strconv.Atoi(viper.GetString("database.port"))
 	cfg := postgres.Config{
 		Host:    viper.GetString("database.host"),
@@ -79,19 +79,19 @@ func initViperConfig() error {
 }
 
 func initHandler(db *sqlx.DB, tokenSigningKey string) *handler.Handler {
-	userRepo := postgres.NewUserPostgresRepo(db)
+	userRepo := postgres.NewUserPsqlRepo(db)
 	userService := service.NewUserService(userRepo)
 
-	sessionRepo := postgres.NewTokenPostgesRepo(db)
-	sessionService := service.NewSessionService(userRepo, sessionRepo, []byte(tokenSigningKey))
+	tokenRepo := postgres.NewTokenPsqlRepo(db)
+	sessionService := service.NewSessionService(userRepo, tokenRepo, []byte(tokenSigningKey))
 
-	groupRepo := postgres.NewGroupPostgresRepo(db)
+	groupRepo := postgres.NewGroupPsqlRepo(db)
 	groupService := service.NewGroupService(groupRepo)
 
-	specialtyRepo := postgres.NewSpecialtyPostgresRepo(db)
+	specialtyRepo := postgres.NewSpecialtyPsqlRepo(db)
 	specialtyService := service.NewSpecialtyService(specialtyRepo)
 
-	departmentRepo := postgres.NewDepartmentPostgresRepo(db)
+	departmentRepo := postgres.NewDepartmentPsqlRepo(db)
 	departmentService := service.NewDepartmentService(departmentRepo)
 
 	return &handler.Handler{
