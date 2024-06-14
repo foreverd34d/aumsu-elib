@@ -22,7 +22,7 @@ type refreshTokenRequest struct {
 
 func (h *Handler) CreateSession(c echo.Context) error {
 	credentials := new(model.Credentials)
-	if err := c.Bind(credentials); err != nil {
+	if err := bindAndValidate(c, credentials); err != nil {
 		return echo.ErrBadRequest.WithInternal(fmt.Errorf("bind credentials: %w", err))
 	}
 	jwt, token, err := h.Session.Create(c.Request().Context(), credentials)
@@ -37,7 +37,7 @@ func (h *Handler) CreateSession(c echo.Context) error {
 
 func (h *Handler) UpdateSession(c echo.Context) error {
 	var refreshToken refreshTokenRequest
-	if err := c.Bind(&refreshToken); err != nil {
+	if err := bindAndValidate(c, &refreshToken); err != nil {
 		return echo.ErrBadRequest.WithInternal(fmt.Errorf("bind refresh token: %w", err))
 	}
 	jwt, token, err := h.Session.Update(c.Request().Context(), refreshToken.RefreshToken)
@@ -52,7 +52,7 @@ func (h *Handler) UpdateSession(c echo.Context) error {
 
 func (h *Handler) DeleteSession(c echo.Context) error {
 	var refreshToken refreshTokenRequest
-	if err := c.Bind(&refreshToken); err != nil {
+	if err := bindAndValidate(c, &refreshToken); err != nil {
 		return echo.ErrBadRequest.WithInternal(fmt.Errorf("bind refresh token: %w", err))
 	}
 	err := h.Session.Delete(c.Request().Context(), refreshToken.RefreshToken)

@@ -21,7 +21,7 @@ type departmentService interface {
 
 func (h *Handler) CreateDepartment(c echo.Context) error {
 	newDepartment := new(model.NewDepartment)
-	if err := c.Bind(newDepartment); err != nil {
+	if err := bindAndValidate(c, newDepartment); err != nil {
 		return echo.ErrBadRequest.WithInternal(fmt.Errorf("bind newDepartment: %w", err))
 	}
 	department, err := h.Department.Create(c.Request().Context(), newDepartment)
@@ -59,7 +59,7 @@ func (h *Handler) UpdateDepartment(c echo.Context) error {
 		return echo.ErrBadRequest.WithInternal(fmt.Errorf("parse departmentID: %w", err))
 	}
 	departmentUpdate := new(model.NewDepartment)
-	if err := c.Bind(departmentUpdate); err != nil {
+	if err := bindAndValidate(c, departmentUpdate); err != nil {
 		return echo.ErrBadRequest.WithInternal(fmt.Errorf("bind departmentUpdate: %w", err))
 	}
 	_, err = h.Department.Update(c.Request().Context(), departmentID, departmentUpdate)

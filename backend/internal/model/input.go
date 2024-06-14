@@ -1,18 +1,18 @@
 package model
 
 type NewUser struct {
-	Name       string  `json:"name"`
-	Surname    string  `json:"surname"`
+	Name       string  `json:"name" validate:"required"`
+	Surname    string  `json:"surname" validate:"required"`
 	Patronymic *string `json:"patronymic,omitempty"`
-	Login      string  `json:"login"`
-	Password   string  `json:"password"`
-	RoleID     int     `json:"roleID"`
+	Login      string  `json:"login" validate:"required"`
+	Password   string  `json:"password" validate:"required"`
+	RoleID     int     `json:"roleID" validate:"required"`
 	GroupID    *int    `json:"groupID,omitempty"`
 }
 
 type Credentials struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Username string `json:"username" validate:"required"`
+	Password string `json:"password" validate:"required"`
 }
 
 type NewToken struct {
@@ -21,15 +21,15 @@ type NewToken struct {
 }
 
 type NewGroup struct {
-	Name        string `json:"name"`
-	SpecialtyID int    `json:"specialtyID"`
+	Name        string `json:"name" validate:"required"`
+	SpecialtyID int    `json:"specialtyID" validate:"required"`
 }
 
 type NewSpecialty struct {
-	Name         string `json:"name"`
-	DepartmentID int    `json:"departmentID"`
+	Name         string `json:"name" validate:"required"`
+	DepartmentID int    `json:"departmentID" validate:"required"`
 }
 
 type NewDepartment struct {
-	Name string `json:"name"`
+	Name string `json:"name" validate:"required"`
 }

@@ -23,7 +23,7 @@ type userService interface {
 
 func (h *Handler) CreateUser(c echo.Context) error {
 	newUser := new(model.NewUser)
-	if err := c.Bind(newUser); err != nil {
+	if err := bindAndValidate(c, newUser); err != nil {
 		return echo.ErrBadRequest.WithInternal(fmt.Errorf("bind newUser: %w", err))
 	}
 	user, err := h.User.Create(c.Request().Context(), newUser)
@@ -61,7 +61,7 @@ func (h *Handler) UpdateUser(c echo.Context) error {
 		return echo.ErrBadRequest.WithInternal(fmt.Errorf("bind ID: %w", err))
 	}
 	userUpdate := new(model.NewUser)
-	if err := c.Bind(userUpdate); err != nil {
+	if err := bindAndValidate(c, userUpdate); err != nil {
 		return echo.ErrBadRequest.WithInternal(err)
 	}
 

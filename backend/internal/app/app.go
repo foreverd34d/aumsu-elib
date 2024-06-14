@@ -6,6 +6,7 @@ import (
 	"github.com/foreverd34d/aumsu-elib/internal/errs"
 	"github.com/foreverd34d/aumsu-elib/internal/handler"
 	"github.com/foreverd34d/aumsu-elib/internal/model"
+	"github.com/go-playground/validator/v10"
 
 	"github.com/golang-jwt/jwt/v5"
 	echojwt "github.com/labstack/echo-jwt/v4"
@@ -17,6 +18,8 @@ func NewApp(h *handler.Handler, tokenSigningKey string) *echo.Echo {
 	app := echo.New()
 	app.Use(middleware.Logger())
 	app.Use(middleware.Recover())
+
+	app.Validator = &BindValidator{validator: validator.New()}
 
 	auth := app.Group("/auth", mapErrorsMiddleware)
 	{
@@ -60,6 +63,14 @@ func NewApp(h *handler.Handler, tokenSigningKey string) *echo.Echo {
 	}
 
 	return app
+}
+
+type BindValidator struct {
+	validator *validator.Validate
+}
+
+func (bv *BindValidator) Validate(i any) error {
+	return bv.validator.Struct(i)
 }
 
 func checkRoleMiddleware(role model.UserRole) echo.MiddlewareFunc {

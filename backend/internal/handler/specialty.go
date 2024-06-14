@@ -21,7 +21,7 @@ type specialtyService interface {
 
 func (h *Handler) CreateSpecialty(c echo.Context) error {
 	newSpecialty := new(model.NewSpecialty)
-	if err := c.Bind(newSpecialty); err != nil {
+	if err := bindAndValidate(c, newSpecialty); err != nil {
 		return echo.ErrBadRequest.WithInternal(fmt.Errorf("bind newSpecialty: %w", err))
 	}
 	specialty, err := h.Specialty.Create(c.Request().Context(), newSpecialty)
@@ -59,7 +59,7 @@ func (h *Handler) UpdateSpecialty(c echo.Context) error {
 		return echo.ErrBadRequest.WithInternal(fmt.Errorf("parse specialtyID: %w", err))
 	}
 	specialtyUpdate := new(model.NewSpecialty)
-	if err := c.Bind(specialtyUpdate); err != nil {
+	if err := bindAndValidate(c, specialtyUpdate); err != nil {
 		return echo.ErrBadRequest.WithInternal(fmt.Errorf("bind specialtyUpdate: %w", err))
 	}
 	_, err = h.Specialty.Update(c.Request().Context(), specialtyID, specialtyUpdate)

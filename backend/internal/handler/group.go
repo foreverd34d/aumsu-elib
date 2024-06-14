@@ -21,7 +21,7 @@ type groupService interface {
 
 func (h *Handler) CreateGroup(c echo.Context) error {
 	newGroup := new(model.NewGroup)
-	if err := c.Bind(newGroup); err != nil {
+	if err := bindAndValidate(c, newGroup); err != nil {
 		return echo.ErrBadRequest.WithInternal(fmt.Errorf("bind newGroup: %w", err))
 	}
 	group, err := h.Group.Create(c.Request().Context(), newGroup)
@@ -59,7 +59,7 @@ func (h *Handler) UpdateGroup(c echo.Context) error {
 		return echo.ErrBadRequest.WithInternal(fmt.Errorf("parse groupID: %w", err))
 	}
 	groupUpdate := new(model.NewGroup)
-	if err := c.Bind(groupUpdate); err != nil {
+	if err := bindAndValidate(c, groupUpdate); err != nil {
 		return echo.ErrBadRequest
 	}
 	if _, err := h.Group.Update(c.Request().Context(), groupID, groupUpdate); err != nil {
