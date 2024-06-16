@@ -1,3 +1,15 @@
+/*
+Server запускает сервер электронной библиотеки.
+
+# Конфигурация
+
+Перед запуском сервер читает файл конфигурации configs/config.yml и
+файл .env с переменными окружения. Из файла конфигурации читаются
+настройки подключения к базе данных и порт сервера.
+Если порт в конфигурации не указан, сервер слушает порт 8080. 
+Из переменных окружения сервер читает ключ подписи jwt токенов
+и пароль к базе данных, если таковой имеется.
+*/
 package main
 
 import (
@@ -21,21 +33,25 @@ import (
 	"github.com/spf13/viper"
 )
 
+// Порт по умолчанию.
 const defaultPort = "8080"
 
 func main() {
+	// Инициализация конфигурационных файлов
 	if err := godotenv.Load(); err != nil {
-		log.Fatalf("Couldn't read the .env file: %v\n", err)
+		log.Printf("Couldn't read the .env file: %v. Using env variables.\n", err)
 	}
 	if err := initViperConfig(); err != nil {
 		log.Fatalf("Couldn't read config file: %v\n", err)
 	}
 
+	// Получение ключа подписи jwt токенов
 	tokenSigningKey := os.Getenv("TOKEN_SIGNING_KEY")
 	if tokenSigningKey == "" {
 		log.Fatalln("Couldn't get signing key: TOKEN_SIGNING_KEY is not defined")
 	}
 
+	// Подключение к базе данных
 	dbCtx, dbCancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer dbCancel()
 	db, err := postgres.NewDB(dbCtx, getDBConfig())
@@ -44,9 +60,11 @@ func main() {
 	}
 	defer db.Close()
 
+	// Инициализация всех путей и middleware
 	handler := initHandler(db, tokenSigningKey)
 	app := app.NewApp(handler, tokenSigningKey)
 
+	// Получение порта, если есть
 	port := viper.GetString("server.port")
 	if port == "" {
 		port = defaultPort
@@ -56,6 +74,7 @@ func main() {
 	runApp(app, port)
 }
 
+// getDBConfig загружает конфигурацию базы данных из файла configs/config.yml.
 func getDBConfig() postgres.Config {
 	dbPort, _ := strconv.Atoi(viper.GetString("database.port"))
 	cfg := postgres.Config{
@@ -72,26 +91,28 @@ func getDBConfig() postgres.Config {
 	return cfg
 }
 
+// initViperConfig считывает файлы конфигурации из директории configs.
 func initViperConfig() error {
 	viper.AddConfigPath("configs")
 	viper.SetConfigName("config")
 	return viper.ReadInConfig()
 }
 
+// initHandler инициализирует все сервисы и репозитории для хэндлера.
 func initHandler(db *sqlx.DB, tokenSigningKey string) *handler.Handler {
-	userRepo := postgres.NewUserPsqlRepo(db)
+	userRepo := postgres.NewUserRepo(db)
 	userService := service.NewUserService(userRepo)
 
-	tokenRepo := postgres.NewTokenPsqlRepo(db)
+	tokenRepo := postgres.NewSessionRepo(db)
 	sessionService := service.NewSessionService(userRepo, tokenRepo, []byte(tokenSigningKey))
 
-	groupRepo := postgres.NewGroupPsqlRepo(db)
+	groupRepo := postgres.NewGroupRepo(db)
 	groupService := service.NewGroupService(groupRepo)
 
-	specialtyRepo := postgres.NewSpecialtyPsqlRepo(db)
+	specialtyRepo := postgres.NewSpecialtyRepo(db)
 	specialtyService := service.NewSpecialtyService(specialtyRepo)
 
-	departmentRepo := postgres.NewDepartmentPsqlRepo(db)
+	departmentRepo := postgres.NewDepartmentRepo(db)
 	departmentService := service.NewDepartmentService(departmentRepo)
 
 	return &handler.Handler{
@@ -103,6 +124,7 @@ func initHandler(db *sqlx.DB, tokenSigningKey string) *handler.Handler {
 	}
 }
 
+// runApp запускает сервер и корректно завершает его работу при получении SIGINT.
 func runApp(app *echo.Echo, port string) {
 	appCtx, appStop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer appStop()

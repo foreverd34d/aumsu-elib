@@ -12,15 +12,18 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-type UserPsqlRepo struct {
+// UserRepo предоставляет доступ к базе данных с пользователями и их данными для входа.
+type UserRepo struct {
 	db *sqlx.DB
 }
 
-func NewUserPsqlRepo(db *sqlx.DB) *UserPsqlRepo {
-	return &UserPsqlRepo{db: db}
+// NewUserRepo создает новый экземпляр [UserRepo].
+func NewUserRepo(db *sqlx.DB) *UserRepo {
+	return &UserRepo{db: db}
 }
 
-func (ur *UserPsqlRepo) Create(ctx context.Context, input *model.NewUser) (*model.User, error) {
+// Create сохраняет нового пользователя и его данные для входа и возвращает пользователя с номером или ошибку.
+func (ur *UserRepo) Create(ctx context.Context, input *model.NewUser) (*model.User, error) {
 	txCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	tx, err := ur.db.BeginTxx(txCtx, nil)
@@ -54,7 +57,9 @@ func (ur *UserPsqlRepo) Create(ctx context.Context, input *model.NewUser) (*mode
 	return user, nil
 }
 
-func (ur *UserPsqlRepo) GetAll(ctx context.Context) ([]model.User, error) {
+// GetAll возвращает слайс всех пользователей или ошибку.
+// Если база данных пуста, то возвращается ошибка [errs.Empty].
+func (ur *UserRepo) GetAll(ctx context.Context) ([]model.User, error) {
 	var users []model.User
 	query := `SELECT * FROM users`
 	if err := ur.db.SelectContext(ctx, &users, query); err != nil {
@@ -67,7 +72,9 @@ func (ur *UserPsqlRepo) GetAll(ctx context.Context) ([]model.User, error) {
 	return users, nil
 }
 
-func (ur *UserPsqlRepo) GetByID(ctx context.Context, ID int) (*model.User, error) {
+// GetByID возвращает пользователя по номеру или ошибку.
+// Если пользователь с таким номером не нашелся, то возвращается ошибка [errs.NotFound].
+func (ur *UserRepo) GetByID(ctx context.Context, ID int) (*model.User, error) {
 	user := new(model.User)
 	query := `SELECT * FROM users WHERE user_id = $1`
 	if err := ur.db.GetContext(ctx, user, query, ID); err != nil {
@@ -80,7 +87,9 @@ func (ur *UserPsqlRepo) GetByID(ctx context.Context, ID int) (*model.User, error
 	return user, nil
 }
 
-func (ur *UserPsqlRepo) GetCredentialsByLogin(ctx context.Context, login string) (*model.UserCredentials, error) {
+// GetCredentialsByLogin возвращает данные пользователя для входа по логину или ошибку.
+// Если пользователь с таким логином не нашелся, то возвращается ошибка [errs.InvalidLogin].
+func (ur *UserRepo) GetCredentialsByLogin(ctx context.Context, login string) (*model.UserCredentials, error) {
 	credentials := new(model.UserCredentials)
 	query := `SELECT * FROM users_credentials WHERE login = $1`
 	if err := ur.db.GetContext(ctx, credentials, query, login); err != nil {
@@ -93,7 +102,9 @@ func (ur *UserPsqlRepo) GetCredentialsByLogin(ctx context.Context, login string)
 	return credentials, nil
 }
 
-func (ur *UserPsqlRepo) GetRole(ctx context.Context, userID int) (string, error) {
+// GetRole возвращает название роли пользователя или ошибку.
+// Если пользователь с таким номером не нашелся, то возвращается ошибка [errs.NotFound].
+func (ur *UserRepo) GetRole(ctx context.Context, userID int) (string, error) {
 	var roleName string
 	query := `
 		SELECT r.name
@@ -111,7 +122,9 @@ func (ur *UserPsqlRepo) GetRole(ctx context.Context, userID int) (string, error)
 	return roleName, nil
 }
 
-func (ur *UserPsqlRepo) Update(ctx context.Context, ID int, update *model.NewUser) (*model.User, error) {
+// Update обновляет пользователя и его данные для входа по номеру и возвращает его или ошибку.
+// Если пользователь с таким номером не нашелся, то возращается ошибка [errs.NotFound].
+func (ur *UserRepo) Update(ctx context.Context, ID int, update *model.NewUser) (*model.User, error) {
 	txCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	tx, err := ur.db.BeginTxx(txCtx, nil)
@@ -132,7 +145,7 @@ func (ur *UserPsqlRepo) Update(ctx context.Context, ID int, update *model.NewUse
 	`
 	if err := tx.GetContext(ctx, updatedUser, userQuery,
 		update.Surname, update.Name, update.Patronymic, update.Login, update.Password, update.RoleID, update.GroupID, ID); err != nil {
-		return nil, fmt.Errorf("UPDATE user: %w: %w", errs.Internal, err)
+		return nil, fmt.Errorf("UPDATE user: %w: %w", errs.NotFound, err)
 	}
 
 	credentialsQuery := `
@@ -143,7 +156,7 @@ func (ur *UserPsqlRepo) Update(ctx context.Context, ID int, update *model.NewUse
 	`
 	_, err = tx.ExecContext(ctx, credentialsQuery, update.Login, update.Password)
 	if err != nil {
-		return nil, fmt.Errorf("UPDATE user's credentials: %w: %w", errs.Internal, err)
+		return nil, fmt.Errorf("UPDATE user's credentials: %w: %w", errs.NotFound, err)
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -153,11 +166,13 @@ func (ur *UserPsqlRepo) Update(ctx context.Context, ID int, update *model.NewUse
 	return updatedUser, nil
 }
 
-func (ur *UserPsqlRepo) Delete(ctx context.Context, ID int) error {
+// Delete удаляет пользователя по номеру и возвращает ошибку, если удаления не произошло.
+// Если пользователь с таким номером не нашелся, то возращается ошибка [errs.NotFound].
+func (ur *UserRepo) Delete(ctx context.Context, ID int) error {
 	query := `DELETE FROM users WHERE user_id = $1 CASCADE`
 	_, err := ur.db.ExecContext(ctx, query, ID)
 	if err != nil {
-		return fmt.Errorf("DELETE the user: %w: %w", errs.Internal, err)
+		return fmt.Errorf("DELETE the user: %w: %w", errs.NotFound, err)
 	}
 	return err
 }

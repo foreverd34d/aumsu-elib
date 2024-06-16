@@ -15,21 +15,36 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-type sessionRepo interface {
+// SessionRepo определяет методы хранилища токенов и сессий.
+type SessionRepo interface {
+	// Create создает новый токен обновления, записывает время начала сессии для пользователя
+	// и возвращает токен обновления с номером или ошибку.
 	Create(ctx context.Context, userID int, input *model.NewToken) (*model.Token, error)
+
+	// GetUserFromSession возвращает пользователя по номеру его сессии или ошибку.
 	GetUserFromSession(ctx context.Context, sessionID int) (*model.User, error)
+
+	// PopByRefreshToken удаляет токен обновления из базы данных и возвращает всю информацию о нем или ошибку.
+	// Если токен не был найден, то возвращается ошибка [errs.NotFound].
 	PopByRefreshToken(ctx context.Context, refreshToken string) (*model.Token, error)
+
+	// UpdateRefreshToken создает новый токен обновления для сессии и возвращает токен с номером или ошибку.
 	UpdateRefreshToken(ctx context.Context, sessionID int, update *model.NewToken) (*model.Token, error)
+
+	// EndSession записывает время окончания сессии и возвращает ошибку, если таковая есть.
 	EndSession(ctx context.Context, sessionID int) error
 }
 
+// SessionService реализует методы для работы с токенами и сессиями
+// и реализует интерфейс [handler.SessionService].
 type SessionService struct {
-	user userRepo
-	session sessionRepo
+	user UserRepo
+	session SessionRepo
 	signingKey []byte
 }
 
-func NewSessionService(user userRepo, session sessionRepo, signingKey []byte) *SessionService {
+// NewSessionService возвращает новый экземпляр [SessionService].
+func NewSessionService(user UserRepo, session SessionRepo, signingKey []byte) *SessionService {
 	return &SessionService{
 		user: user,
 		session: session,
@@ -37,6 +52,9 @@ func NewSessionService(user userRepo, session sessionRepo, signingKey []byte) *S
 	}
 }
 
+// Create создает пару из jwt токена и токена обновления и записывает время начала сессия пользователя.
+// Если имя пользователя не найдено или пароль не совпадает с сохраненным,
+// то возвращается ошибка [errs.InvalidLogin] или [errs.InvalidPassword].
 func (ss *SessionService) Create(ctx context.Context, credentials *model.Credentials) (jwt string, refreshToken *model.Token, err error) {
 	dbCredentials, err := ss.user.GetCredentialsByLogin(ctx, credentials.Username)
 	if err != nil {
@@ -68,6 +86,9 @@ func (ss *SessionService) Create(ctx context.Context, credentials *model.Credent
 	return
 }
 
+// Update создает новую пару токенов по токену обновления. Сессия при этом не кончается,
+// а старый токен обновления становится невалидным.
+// Если токен обновления истек, то возвращается ошибка [errs.RefreshExpired].
 func (ss *SessionService) Update(ctx context.Context, refreshToken string) (newjwt string, newRefreshToken *model.Token, err error) {
 	token, err := ss.session.PopByRefreshToken(ctx, refreshToken)
 	if err != nil {
@@ -110,6 +131,7 @@ func (ss *SessionService) Update(ctx context.Context, refreshToken string) (newj
 	return
 }
 
+// Delete делает токен обновления невалидным и записывает время окончания сессии.
 func (ss *SessionService) Delete(ctx context.Context, refreshToken string) error {
 	token, _ := ss.session.PopByRefreshToken(ctx, refreshToken)
 	err := ss.session.EndSession(ctx, token.SessionID)
@@ -119,6 +141,7 @@ func (ss *SessionService) Delete(ctx context.Context, refreshToken string) error
 	return err
 }
 
+// getRoleFromName возвращает роль исходя из ее названия.
 func getRoleFromName(roleName string) model.UserRole {
 	var role model.UserRole
 	switch roleName {
@@ -134,12 +157,15 @@ func getRoleFromName(roleName string) model.UserRole {
 	return role
 }
 
+// hashPassword хэширует пароль алгоритмом sha-256.
 func hashPassword(password string) string {
 	hasher := sha256.New()
 	hasher.Write([]byte(password))
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
+// createJWT создает новый jwt токен пользователя с его ролью
+// и подписывает его при помощи переданого ключа алгоритмом sha-256.
 func createJWT(userID int, roleName string, signingKey []byte) (string, error) {
 	role := getRoleFromName(roleName)
 	claims := &model.JWTClaims{
@@ -153,6 +179,7 @@ func createJWT(userID int, roleName string, signingKey []byte) (string, error) {
 	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(signingKey)
 }
 
+// createNewToken создает новый токен обновления со сроком действия в месяц.
 func createNewToken() *model.NewToken {
 	return &model.NewToken{
 		RefreshToken: generateRefreshToken(),
@@ -160,6 +187,8 @@ func createNewToken() *model.NewToken {
 	}
 }
 
+// generateRefreshToken возвращает случайно сгенерированную строку
+// длиной 32 символа, представляющую из себя токен обновления.
 func generateRefreshToken() string {
 	buf := make([]byte, 32)
 	rand.Read(buf)

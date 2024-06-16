@@ -12,15 +12,18 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-type SpecialtyPsqlRepo struct {
+// SpecialtyRepo предоставляет доступ к базе данных со специальностями.
+type SpecialtyRepo struct {
 	db *sqlx.DB
 }
 
-func NewSpecialtyPsqlRepo(db *sqlx.DB) *SpecialtyPsqlRepo {
-	return &SpecialtyPsqlRepo{db}
+// NewSpecialtyRepo создает новый экземпляр [SpecialtyRepo].
+func NewSpecialtyRepo(db *sqlx.DB) *SpecialtyRepo {
+	return &SpecialtyRepo{db}
 }
 
-func (sr *SpecialtyPsqlRepo) Create(ctx context.Context, input *model.NewSpecialty) (*model.Specialty, error) {
+// Create сохраняет новую специальность в базе данных и возвращает ее с номером или ошибку.
+func (sr *SpecialtyRepo) Create(ctx context.Context, input *model.NewSpecialty) (*model.Specialty, error) {
 	specialty := new(model.Specialty)
 	query := `
 		INSERT INTO specialties (name, department_id)
@@ -33,7 +36,10 @@ func (sr *SpecialtyPsqlRepo) Create(ctx context.Context, input *model.NewSpecial
 	return specialty, nil
 }
 
-func (sr *SpecialtyPsqlRepo) GetAll(ctx context.Context) ([]model.Specialty, error) {
+
+// GetAll возвращает слайс всех специальностей или ошибку.
+// Если база данных пуста, то возвращается ошибка [errs.Empty].
+func (sr *SpecialtyRepo) GetAll(ctx context.Context) ([]model.Specialty, error) {
 	var specialties []model.Specialty
 	query := `SELECT * FROM specialties`
 	if err := sr.db.SelectContext(ctx, &specialties, query); err != nil {
@@ -46,7 +52,9 @@ func (sr *SpecialtyPsqlRepo) GetAll(ctx context.Context) ([]model.Specialty, err
 	return specialties, nil
 }
 
-func (sr *SpecialtyPsqlRepo) Get(ctx context.Context, ID int) (*model.Specialty, error) {
+// Get возвращает специальность по номеру или ошибку.
+// Если специальность с таким номером не нашлась, то возвращается ошибка [errs.NotFound].
+func (sr *SpecialtyRepo) Get(ctx context.Context, ID int) (*model.Specialty, error) {
 	specialty := new(model.Specialty)
 	query := `SELECT * FROM specialties WHERE specialty_id = $1`
 	if err := sr.db.GetContext(ctx, specialty, query, ID); err != nil {
@@ -59,7 +67,9 @@ func (sr *SpecialtyPsqlRepo) Get(ctx context.Context, ID int) (*model.Specialty,
 	return specialty, nil
 }
 
-func (sr *SpecialtyPsqlRepo) Update(ctx context.Context, ID int, update *model.NewSpecialty) (*model.Specialty, error) {
+// Update обновляет специальность по номеру и возвращает ее с номером или ошибку.
+// Если специальность с таким номером не нашлась, то возращается ошибка [errs.NotFound].
+func (sr *SpecialtyRepo) Update(ctx context.Context, ID int, update *model.NewSpecialty) (*model.Specialty, error) {
 	specialty := new(model.Specialty)
 	query := `
 		UPDATE specialties
@@ -74,7 +84,9 @@ func (sr *SpecialtyPsqlRepo) Update(ctx context.Context, ID int, update *model.N
 	return specialty, nil
 }
 
-func (sr *SpecialtyPsqlRepo) Delete(ctx context.Context, ID int) error {
+// Delete удаляет специальность по номеру и возвращает ошибку, если удаления не произошло.
+// Если специальность с таким номером не нашлась, то возращается ошибка [errs.NotFound].
+func (sr *SpecialtyRepo) Delete(ctx context.Context, ID int) error {
 	query := `DELETE FROM specialties WHERE specialty_id = $1 CASCADE`
 	_, err := sr.db.ExecContext(ctx, query, ID)
 	if err != nil {
