@@ -79,10 +79,10 @@ func (h *Handler) UpdateGroup(c echo.Context) error {
 	}
 	groupUpdate := new(model.NewGroup)
 	if err := bindAndValidate(c, groupUpdate); err != nil {
-		return echo.ErrBadRequest
+		return echo.ErrBadRequest.WithInternal(fmt.Errorf("bind groupUpdate: %w", err))
 	}
 	if _, err := h.Group.Update(c.Request().Context(), groupID, groupUpdate); err != nil {
-		return echo.ErrNotFound
+		return err
 	}
 	return c.NoContent(http.StatusNoContent)
 }

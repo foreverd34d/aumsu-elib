@@ -24,7 +24,7 @@ func NewApp(h *handler.Handler, tokenSigningKey string) *echo.Echo {
 	app.Use(middleware.Recover())
 	app.Use(mapErrors)
 
-	app.Validator = &BindValidator{validator: validator.New()}
+	app.Validator = &BindValidator{validator: validator.New(validator.WithRequiredStructEnabled())}
 
 	auth := app.Group("/auth")
 	{

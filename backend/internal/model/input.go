@@ -2,13 +2,13 @@ package model
 
 // NewUser содержит данные для добавления нового пользователя.
 type NewUser struct {
-	Name       string  `json:"name" validate:"required"`     // имя
-	Surname    string  `json:"surname" validate:"required"`  // фамилия
-	Patronymic *string `json:"patronymic,omitempty"`         // отчество (если имеется)
-	Login      string  `json:"login" validate:"required"`    // имя пользователя
-	Password   string  `json:"password" validate:"required"` // пароль
-	RoleID     int     `json:"roleID" validate:"required"`   // номер роли
-	GroupID    *int    `json:"groupID,omitempty"`            // номер группы (должен быть у студента)
+	Name       string  `json:"name" validate:"required"`           // имя
+	Surname    string  `json:"surname" validate:"required"`        // фамилия
+	Patronymic *string `json:"patronymic,omitempty"`               // отчество (если имеется)
+	Login      string  `json:"login" validate:"required"`          // имя пользователя
+	Password   string  `json:"password" validate:"required"`       // пароль
+	RoleID     int     `json:"roleID" validate:"required,gte=1"`   // номер роли
+	GroupID    *int    `json:"groupID,omitempty" validate:"gte=1"` // номер группы (должен быть у студента)
 }
 
 // Credentials содержит данные для входа в систему.
@@ -25,17 +25,22 @@ type NewToken struct {
 
 // NewGroup содержит данные для добавления нового взвода.
 type NewGroup struct {
-	Name        string `json:"name" validate:"required"`        // название
-	SpecialtyID int    `json:"specialtyID" validate:"required"` // номер специальности
+	Name        string `json:"name" validate:"required"`              // название
+	SpecialtyID int    `json:"specialtyID" validate:"required,gte=1"` // номер специальности
 }
 
 // NewSpecialty содержит данные для добавления новой специальности.
 type NewSpecialty struct {
-	Name         string `json:"name" validate:"required"`         // название
-	DepartmentID int    `json:"departmentID" validate:"required"` // номер кафедры
+	Name         string `json:"name" validate:"required"`               // название
+	DepartmentID int    `json:"departmentID" validate:"required,gte=1"` // номер кафедры
 }
 
 // NewDepartment содержит данные для добавления новой кафедры.
 type NewDepartment struct {
 	Name string `json:"name" validate:"required"` // название
+}
+
+type NewDiscipline struct {
+	Name        string `json:"name" validate:"required"`
+	SpecialtyID int    `json:"specialtyID" validate:"required,gte=1"`
 }

@@ -115,12 +115,16 @@ func initHandler(db *sqlx.DB, tokenSigningKey string) *handler.Handler {
 	departmentRepo := postgres.NewDepartmentRepo(db)
 	departmentService := service.NewDepartmentService(departmentRepo)
 
+	disciplineRepo := postgres.NewDisciplineRepo(db)
+	disciplineService := service.NewDisciplineService(disciplineRepo)
+
 	return &handler.Handler{
 		User:       userService,
 		Session:    sessionService,
 		Group:      groupService,
 		Specialty:  specialtyService,
 		Department: departmentService,
+		Discipline: disciplineService,
 	}
 }
 

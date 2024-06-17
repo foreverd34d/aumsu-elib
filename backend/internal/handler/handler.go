@@ -9,6 +9,7 @@ type Handler struct {
 	Group      GroupService
 	Specialty  SpecialtyService
 	Department DepartmentService
+	Discipline DisciplineService
 }
 
 // bindAndValidate биндит структуру из тела запроса и проверяет ее.
